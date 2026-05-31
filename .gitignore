@@ -1,0 +1,28 @@
+# Environment
+.env
+*.pyc
+__pycache__/
+*.egg-info/
+.pytest_cache/
+
+# Data (large files — store externally)
+etl_pipeline/data/
+etl_pipeline/cache/
+/data/
+/cache/
+
+# Docker volumes
+postgis_data/
+
+# Reports
+*.pdf
+*.log
+
+# QGIS
+*.qgs~
+*.qgz
+
+# IDE
+.vscode/
+.idea/
+*.swp

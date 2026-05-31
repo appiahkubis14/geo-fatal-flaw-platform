@@ -1,0 +1,25 @@
+# metadata.txt — QGIS Plugin Metadata
+[general]
+name=Fatal Flaw Analyzer
+qgisMinimumVersion=3.28
+qgisMaximumVersion=3.99
+description=Fatal Flaw geospatial risk assessment for renewable energy sites (Solar, Wind, BESS, Data Center) across CONUS. One-click site scoring against 15 constraint layers with PDF report generation.
+version=1.0.0
+author=Fatal Flaw Platform
+email=support@fatalflawplatform.com
+about=Connects to the Fatal Flaw Risk Assessment API to score candidate project sites against 15 geospatial constraint layers including protected areas, critical habitat, floodplains, transmission infrastructure, and more. Displays color-coded risk overlays and generates professional PDF reports.
+tracker=https://github.com/yourorg/fatal-flaw-platform/issues
+repository=https://github.com/yourorg/fatal-flaw-platform
+homepage=https://github.com/yourorg/fatal-flaw-platform
+category=Analysis
+icon=icons/icon.svg
+experimental=False
+deprecated=False
+server=False
+hasProcessingProvider=False
+changelog=
+    1.0.0 - Initial release
+    - 15-layer risk assessment
+    - Color-coded polygon overlays
+    - PDF report generation
+    - Multi-site-type weight profiles

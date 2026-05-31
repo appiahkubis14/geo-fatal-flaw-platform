@@ -1,0 +1,391 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Fatal Flaw Geospatial Risk Assessment API",
+    "description": "Production-grade site suitability scoring for Solar, Wind, BESS, and Data Center projects across CONUS. Accepts GeoJSON polygons and returns weighted risk scores against 15 geospatial constraint layers. Response time SLA: <500ms.",
+    "version": "1.0.0",
+    "contact": {
+      "name": "Fatal Flaw Platform Support",
+      "email": "support@fatalflawplatform.com"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Local development"
+    }
+  ],
+  "paths": {
+    "/health": {
+      "get": {
+        "summary": "Health check",
+        "operationId": "healthCheck",
+        "tags": ["Health"],
+        "responses": {
+          "200": {
+            "description": "API is healthy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                },
+                "example": {
+                  "status": "ok",
+                  "database": "connected",
+                  "db_latency_ms": 12.4,
+                  "timestamp": "2026-01-15T10:30:00Z",
+                  "version": "1.0.0"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/metrics": {
+      "get": {
+        "summary": "Prometheus metrics",
+        "operationId": "getMetrics",
+        "tags": ["Health"],
+        "responses": {
+          "200": {
+            "description": "Prometheus-format metrics",
+            "content": {
+              "text/plain": {
+                "schema": { "type": "string" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/assess-site": {
+      "post": {
+        "summary": "Assess site risk",
+        "operationId": "assessSite",
+        "tags": ["Assessment"],
+        "description": "Submit a GeoJSON polygon representing a candidate project site. Returns a risk score (0-100), fatal flag, and per-layer breakdown across 15 geospatial constraint layers. Response time target: <500ms.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SiteAssessmentRequest"
+              },
+              "examples": {
+                "simple_solar_site": {
+                  "summary": "Simple solar site polygon",
+                  "value": {
+                    "type": "Feature",
+                    "geometry": {
+                      "type": "Polygon",
+                      "coordinates": [[
+                        [-100.0, 40.0], [-99.0, 40.0],
+                        [-99.0, 41.0], [-100.0, 41.0],
+                        [-100.0, 40.0]
+                      ]]
+                    },
+                    "properties": {
+                      "site_name": "Example Solar Site",
+                      "site_type": "solar"
+                    }
+                  }
+                },
+                "wind_site_multipolygon": {
+                  "summary": "Wind site as MultiPolygon",
+                  "value": {
+                    "type": "Feature",
+                    "geometry": {
+                      "type": "MultiPolygon",
+                      "coordinates": [
+                        [[[-105.1, 41.2], [-105.0, 41.2], [-105.0, 41.3], [-105.1, 41.3], [-105.1, 41.2]]],
+                        [[[-105.3, 41.4], [-105.2, 41.4], [-105.2, 41.5], [-105.3, 41.5], [-105.3, 41.4]]]
+                      ]
+                    },
+                    "properties": {
+                      "site_name": "Ridge Wind Farm",
+                      "site_type": "wind"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Risk assessment complete",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteAssessmentResponse"
+                },
+                "example": {
+                  "assessment_id": "550e8400-e29b-41d4-a716-446655440000",
+                  "site_name": "Example Solar Site",
+                  "site_type": "solar",
+                  "assessment_timestamp": "2026-01-15T10:30:00Z",
+                  "overall_risk_score": 34.2,
+                  "fatal_flag": false,
+                  "fatal_layers": [],
+                  "top_risks": [
+                    {
+                      "layer_name": "wetlands",
+                      "category": "environmental",
+                      "impact_area_acres": 12.4,
+                      "percentage_of_site": 18.2,
+                      "contribution_score": 22.5,
+                      "weight": 0.25,
+                      "is_fatal": false,
+                      "min_distance_meters": null
+                    }
+                  ],
+                  "all_layer_results": [],
+                  "site_area_acres": 68.2,
+                  "processing_time_ms": 312
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation error — invalid geometry, outside CONUS, or area limit exceeded",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "examples": {
+                  "outside_conus": {
+                    "value": { "detail": "Site geometry is outside CONUS bounds..." }
+                  },
+                  "too_small": {
+                    "value": { "detail": "Site area (0.3 acres) is below minimum (1.0 acres)" }
+                  },
+                  "bad_type": {
+                    "value": { "detail": "Geometry must be Polygon or MultiPolygon, got Point" }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests — rate limit exceeded",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/weights": {
+      "get": {
+        "summary": "Get risk weights (admin)",
+        "operationId": "getWeights",
+        "tags": ["Weights (Admin)"],
+        "security": [{ "ApiKeyHeader": [] }],
+        "parameters": [
+          {
+            "name": "site_type",
+            "in": "query",
+            "schema": { "type": "string", "enum": ["solar", "wind", "bess", "datacenter", "default"] },
+            "description": "Weight profile to retrieve"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Weight profile",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/WeightsResponse" }
+              }
+            }
+          },
+          "403": { "description": "Invalid API key" }
+        }
+      },
+      "put": {
+        "summary": "Update risk weights (admin)",
+        "operationId": "updateWeights",
+        "tags": ["Weights (Admin)"],
+        "security": [{ "ApiKeyHeader": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/WeightUpdateRequest" },
+              "example": {
+                "updates": [
+                  { "layer_name": "wetlands", "site_type": "solar", "weight": 0.30 },
+                  { "layer_name": "floodplains", "site_type": "bess", "weight": 0.40 }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Weights updated",
+            "content": {
+              "application/json": {
+                "example": { "updated": ["wetlands/solar=0.3", "floodplains/bess=0.4"], "count": 2 }
+              }
+            }
+          },
+          "403": { "description": "Invalid API key" }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "ApiKeyHeader": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key"
+      }
+    },
+    "schemas": {
+      "GeoJSONGeometry": {
+        "type": "object",
+        "required": ["type", "coordinates"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": ["Polygon", "MultiPolygon"],
+            "description": "GeoJSON geometry type"
+          },
+          "coordinates": {
+            "type": "array",
+            "description": "GeoJSON coordinate array in EPSG:4326 (WGS84)"
+          }
+        }
+      },
+      "SiteProperties": {
+        "type": "object",
+        "properties": {
+          "site_name": { "type": "string", "maxLength": 255, "example": "Example Solar Site" },
+          "site_type": {
+            "type": "string",
+            "enum": ["solar", "wind", "bess", "datacenter"],
+            "default": "solar",
+            "description": "Project type — determines weight profile used for scoring"
+          }
+        }
+      },
+      "SiteAssessmentRequest": {
+        "type": "object",
+        "required": ["type", "geometry"],
+        "properties": {
+          "type": { "type": "string", "enum": ["Feature"] },
+          "geometry": { "$ref": "#/components/schemas/GeoJSONGeometry" },
+          "properties": { "$ref": "#/components/schemas/SiteProperties" }
+        }
+      },
+      "LayerResult": {
+        "type": "object",
+        "properties": {
+          "layer_name": { "type": "string" },
+          "category": { "type": "string", "enum": ["environmental", "grid", "land_use", "physical"] },
+          "analysis_type": { "type": "string", "enum": ["intersect", "proximity", "buffer"] },
+          "intersects": { "type": "boolean" },
+          "intersection_area_acres": { "type": "number", "minimum": 0 },
+          "percentage_of_site": { "type": "number", "minimum": 0, "maximum": 100 },
+          "min_distance_meters": { "type": "number", "nullable": true },
+          "contribution_score": { "type": "number", "minimum": 0, "maximum": 100 },
+          "weight": { "type": "number", "minimum": 0, "maximum": 1 },
+          "is_fatal": { "type": "boolean" },
+          "fatal_triggered": { "type": "boolean" }
+        }
+      },
+      "TopRisk": {
+        "type": "object",
+        "properties": {
+          "layer_name": { "type": "string" },
+          "category": { "type": "string" },
+          "impact_area_acres": { "type": "number" },
+          "percentage_of_site": { "type": "number" },
+          "contribution_score": { "type": "number" },
+          "weight": { "type": "number" },
+          "is_fatal": { "type": "boolean" },
+          "min_distance_meters": { "type": "number", "nullable": true }
+        }
+      },
+      "SiteAssessmentResponse": {
+        "type": "object",
+        "properties": {
+          "assessment_id": { "type": "string", "format": "uuid" },
+          "site_name": { "type": "string" },
+          "site_type": { "type": "string" },
+          "assessment_timestamp": { "type": "string", "format": "date-time" },
+          "overall_risk_score": { "type": "number", "minimum": 0, "maximum": 100 },
+          "fatal_flag": { "type": "boolean" },
+          "fatal_layers": { "type": "array", "items": { "type": "string" } },
+          "top_risks": { "type": "array", "items": { "$ref": "#/components/schemas/TopRisk" } },
+          "all_layer_results": { "type": "array", "items": { "$ref": "#/components/schemas/LayerResult" } },
+          "site_area_acres": { "type": "number" },
+          "processing_time_ms": { "type": "integer" }
+        }
+      },
+      "WeightsResponse": {
+        "type": "object",
+        "properties": {
+          "site_type": { "type": "string" },
+          "weights": {
+            "type": "object",
+            "additionalProperties": { "type": "number" },
+            "example": { "wetlands": 0.25, "protected_areas": 0.40, "critical_habitat": 0.45 }
+          },
+          "last_updated": { "type": "string", "format": "date-time", "nullable": true }
+        }
+      },
+      "WeightEntry": {
+        "type": "object",
+        "required": ["layer_name", "site_type", "weight"],
+        "properties": {
+          "layer_name": { "type": "string" },
+          "site_type": { "type": "string" },
+          "weight": { "type": "number", "minimum": 0, "maximum": 1 }
+        }
+      },
+      "WeightUpdateRequest": {
+        "type": "object",
+        "required": ["updates"],
+        "properties": {
+          "updates": { "type": "array", "items": { "$ref": "#/components/schemas/WeightEntry" } }
+        }
+      },
+      "HealthResponse": {
+        "type": "object",
+        "properties": {
+          "status": { "type": "string", "enum": ["ok", "degraded"] },
+          "database": { "type": "string" },
+          "db_latency_ms": { "type": "number" },
+          "timestamp": { "type": "string", "format": "date-time" },
+          "version": { "type": "string" }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "detail": { "type": "string" }
+        }
+      }
+    }
+  }
+}

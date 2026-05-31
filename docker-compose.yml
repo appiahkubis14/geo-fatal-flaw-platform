@@ -1,0 +1,89 @@
+version: "3.9"
+
+services:
+  postgis:
+    image: postgis/postgis:15-3.4
+    container_name: fatal_flaw_postgis
+    environment:
+      POSTGRES_DB: fatal_flaw_db
+      POSTGRES_USER: fatal_user
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-F@talFl@w2025!}
+    volumes:
+      - postgis_data:/var/lib/postgresql/data
+      - ./sql/init_schema.sql:/docker-entrypoint-initdb.d/01_init_schema.sql:ro
+      - ./sql/seed_registry.sql:/docker-entrypoint-initdb.d/02_seed_registry.sql:ro
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fatal_user -d fatal_flaw_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: fatal_flaw_redis
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+  fastapi:
+    build:
+      context: ./risk_api
+      dockerfile: Dockerfile
+    container_name: fatal_flaw_api
+    environment:
+      DATABASE_URL: postgresql://fatal_user:${POSTGRES_PASSWORD:-F@talFl@w2025!}@postgis:5432/fatal_flaw_db
+      ASYNC_DATABASE_URL: postgresql+asyncpg://fatal_user:${POSTGRES_PASSWORD:-F@talFl@w2025!}@postgis:5432/fatal_flaw_db
+      REDIS_URL: redis://redis:6379/0
+      API_KEY: ${API_KEY:-dev-change-in-production}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      WORKERS: ${API_WORKERS:-4}
+    ports:
+      - "${API_PORT:-8000}:8000"
+    depends_on:
+      postgis:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers ${API_WORKERS:-4} --log-level info
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  etl_runner:
+    build:
+      context: ./etl_pipeline
+      dockerfile: Dockerfile
+    container_name: fatal_flaw_etl
+    environment:
+      DATABASE_URL: postgresql://fatal_user:${POSTGRES_PASSWORD:-F@talFl@w2025!}@postgis:5432/fatal_flaw_db
+      ETL_DATA_DIR: /data
+      ETL_CACHE_DIR: /cache
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    volumes:
+      - etl_data:/data
+      - etl_cache:/cache
+    depends_on:
+      postgis:
+        condition: service_healthy
+    profiles:
+      - etl
+    restart: "no"
+
+volumes:
+  postgis_data:
+    driver: local
+  etl_data:
+    driver: local
+  etl_cache:
+    driver: local

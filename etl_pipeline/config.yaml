@@ -1,0 +1,201 @@
+# ============================================================
+# Fatal Flaw ETL Pipeline — Central Configuration
+# ============================================================
+
+database:
+  url: "${DATABASE_URL}"
+  schema: constraints
+  pool_size: 5
+
+storage:
+  data_dir: "${ETL_DATA_DIR:-/data}"
+  cache_dir: "${ETL_CACHE_DIR:-/cache}"
+  temp_dir: /tmp/fatal_flaw_etl
+
+processing:
+  target_crs: EPSG:5070
+  display_crs: EPSG:4326
+  chunk_size_bytes: 10485760       # 10 MB streaming chunk
+  download_timeout_seconds: 3600   # 1 hour
+  retry_attempts: 3
+  retry_backoff_base: 2            # exponential: 2^attempt seconds
+  rate_limit_delay: 1.0            # seconds between downloads
+  max_concurrent_downloads: 2
+  raster_tile_size: 512            # pixels per tile for raster processing
+
+layers:
+  wetlands:
+    enabled: true
+    download_type: state_aggregate   # downloads per-state, then merges
+    base_url: "https://www.fws.gov/wetlands/data/state-downloads.html"
+    # Actual per-state download pattern (example: California)
+    # https://www.fws.gov/wetlands/downloads/State/CA_shapefile_wetlands.zip
+    state_url_pattern: "https://www.fws.gov/wetlands/downloads/State/{state_abbr}_shapefile_wetlands.zip"
+    file_format: shapefile
+    layer_filter: null
+    attribute_map:
+      WETLAND_TY: wetland_type
+    fatal_field: null
+    fatal_value: null
+    priority_states: []             # empty = all CONUS states
+    conus_download_url: "https://www.fws.gov/wetlands/downloads/Conus/conus_shapefile_wetlands.zip"
+
+  protected_areas:
+    enabled: true
+    download_url: "https://www.sciencebase.gov/catalog/file/get/652ebcb1d34ee8d4aad95b8d?facets=PADUS4_0Combined_Proclamation_Marine_Fee_Designation_Easement_Shapefile.zip"
+    alt_url: "https://www.sciencebase.gov/catalog/item/652ebcb1d34ee8d4aad95b8d"
+    file_format: shapefile
+    layer_name: PADUS4_0Combined
+    attribute_map:
+      GAP_Sts: gap_status
+      Unit_Nm: unit_name
+      Mang_Type: manager_type
+    fatal_field: gap_status
+    fatal_values: [1, 2]            # GAP Status 1 or 2 = fatal
+
+  critical_habitat:
+    enabled: true
+    download_url: "https://ecos.fws.gov/crithab/crithab_all/crithab_all_sf.zip"
+    file_format: shapefile
+    attribute_map:
+      comname: common_name
+      sciname: scientific_name
+      status: status
+    fatal_field: null               # all critical habitat = fatal
+    fatal_value: null
+
+  floodplains:
+    enabled: true
+    # FEMA NFHL national mosaic GDB
+    download_url: "https://msc.fema.gov/portal/downloadProduct?productTypeID=NFHL_CONUS_20240101"
+    alt_url: "https://hazards.fema.gov/nhdplusdata/NFHL/NATIONAL/NFHL_National_20240101.zip"
+    file_format: geodatabase
+    layer_name: S_FLD_HAZ_AR          # flood hazard area layer within GDB
+    attribute_filter: "FLD_ZONE IN ('A','AE','AH','AO','AR','V','VE')"
+    attribute_map:
+      FLD_ZONE: flood_zone
+      DFIRM_ID: dfirm_id
+    fatal_field: null
+
+  wilderness_areas:
+    enabled: true
+    download_url: "https://data.fs.usda.gov/geodata/edw/edw_resources/shp/S_USA.Wilderness.zip"
+    blm_supplement_url: "https://gbp-blm-egis.hub.arcgis.com/datasets/BLM-EGIS::blm-natl-wilderness-area-polygon/downloads/data?format=shp&spatialRefId=4326"
+    file_format: shapefile
+    attribute_map:
+      WILDERNE_1: wilderness_name
+      ADMINFOREST: agency
+    fatal_field: null               # all wilderness = fatal
+
+  transmission_lines:
+    enabled: true
+    download_url: "https://opendata.arcgis.com/api/v3/datasets/70592bc3bd894320aed315d814f0ead7_0/downloads/data?format=shp&spatialRefId=4326"
+    file_format: shapefile
+    attribute_filter: "VOLT_CLASS NOT IN ('UNDER 100')"
+    attribute_map:
+      VOLTAGE: voltage_kv
+      OWNER: owner
+      TYPE: type
+    fatal_field: null
+    proximity_meters: 8046          # 5 miles
+
+  substations:
+    enabled: true
+    download_url: "https://opendata.arcgis.com/api/v3/datasets/e7c16e6be24c4b8f9c12f5fde74c4e45_0/downloads/data?format=shp&spatialRefId=4326"
+    file_format: shapefile
+    attribute_map:
+      NAME: substation_name
+      MAX_VOLT: voltage_kv
+      OWNER: owner
+    fatal_field: null
+    proximity_meters: 8046
+
+  pipeline_corridors:
+    enabled: true
+    download_url: "https://opendata.arcgis.com/api/v3/datasets/e5b09bdb86f44c229bec1e5a028bf01f_0/downloads/data?format=shp&spatialRefId=4326"
+    file_format: shapefile
+    attribute_map:
+      TYPICALDIA: pipeline_type
+      OPERATOR: operator
+    fatal_field: null
+    buffer_meters: 152              # 500 ft safety setback
+
+  agricultural_preserves:
+    enabled: true
+    # SSURGO farm important farmland; download via Web Soil Survey or NRCS direct
+    download_url: "https://www.nrcs.usda.gov/Internet/FSE_DOCUMENTS/nrcs142p2_054028.zip"
+    alt_url: "https://sdmdataaccess.nrcs.usda.gov/Spatial/SDM.wfs?SERVICE=WFS&VERSION=1.1.0&REQUEST=GetFeature&TYPENAME=farmlandpolyrestricted&SRSNAME=EPSG:4326"
+    file_format: shapefile
+    attribute_map:
+      farmlndcl: land_cap_class
+      statecd: state_fips
+    fatal_field: null
+    # prime farmland codes
+    prime_classes: ['P', 'U', 'S']  # Prime, Unique, Statewide Importance
+
+  federal_lands:
+    enabled: true
+    download_url: "https://opendata.arcgis.com/datasets/3d4e5b628e9a47fbb062f0b2060d998e_0.zip"
+    alt_url: "https://gbp-blm-egis.hub.arcgis.com/datasets/BLM-EGIS::blm-natl-surface-management-agency-area-polygon/downloads/data?format=shp&spatialRefId=4326"
+    file_format: shapefile
+    attribute_map:
+      Adm_Code: agency
+      Unit_Nm: unit_name
+    fatal_field: agency
+    fatal_values: ['NPS', 'DOD', 'USMC', 'USA', 'USAF', 'NAVY']
+
+  tribal_lands:
+    enabled: true
+    download_url: "https://www2.census.gov/geo/tiger/TIGER2023/AIANNH/tl_2023_us_aiannh.zip"
+    file_format: shapefile
+    attribute_map:
+      NAME: tribe_name
+      NAMELSAD: aiannha_name
+    fatal_field: null               # all tribal lands = fatal
+
+  urban_areas:
+    enabled: true
+    # NLCD 2021 is a raster; ETL vectorizes developed classes
+    download_url: "https://s3-us-west-2.amazonaws.com/mrlc/nlcd_2021_land_cover_l48_20230630.img"
+    file_format: raster_classified
+    developed_classes: [21, 22, 23, 24]   # Open, Low, Med, High intensity
+    simplify_tolerance_m: 30              # simplify after vectorizing
+    fatal_field: null
+
+  steep_slopes:
+    enabled: true
+    # 1 arc-second (~30m) seamless DEM. Download via TNM or chunked by state
+    download_url: "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1/TIFF/current/USGS_1_arc_second_n48w100_20230703.tif"
+    tnm_api_url: "https://tnmaccess.nationalmap.gov/api/v1/products"
+    file_format: raster_continuous
+    slope_threshold_pct: 15           # >15% grade
+    simplify_tolerance_m: 30
+    fatal_field: null
+
+  high_elevation:
+    enabled: true
+    # Same DEM source as steep_slopes
+    dem_layer: steep_slopes           # reuse already-downloaded DEM
+    file_format: raster_continuous
+    elevation_threshold_m: 2500       # >2500m MSL (~8200ft)
+    simplify_tolerance_m: 50
+    fatal_field: null
+
+  contaminated_sites:
+    enabled: true
+    # EPA NPL (Superfund) GeoJSON
+    npl_download_url: "https://www.epa.gov/sites/default/files/2016-05/npl_geojson.json"
+    # EPA ECHO brownfields
+    echo_api_url: "https://echodata.epa.gov/echo/rest/services/ECHO_Facilities/MapServer/0/query?where=REGISTRY_ID+IS+NOT+NULL&outFields=*&f=json&resultOffset=0&resultRecordCount=2000"
+    brownfield_url: "https://www.epa.gov/sites/default/files/2015-09/brownfields_geojson.json"
+    file_format: geojson
+    attribute_map:
+      Site_Name: site_name
+      EPA_ID: site_id
+      Site_Type: site_type
+      Status: status
+    fatal_field: site_type
+    fatal_values: ['NPL', 'Superfund', 'NATIONAL PRIORITIES LIST']
+    buffer_meters: 402               # ~1320ft buffer for brownfields
+
+additional_layers: []                # extensibility hook — see docs/extending.md
