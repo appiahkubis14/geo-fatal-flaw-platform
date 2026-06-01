@@ -1,0 +1,17 @@
+{
+  "type": "FeatureCollection",
+  "features": [ 
+    {
+      "type": "Feature",
+      "properties": { "id": 3, "name": "Chicago", "state": "IL", "population": "9.5M" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [-88.3257, 41.4721], [-87.5240, 41.4721], [-87.5240, 42.1542],
+          [-88.3257, 42.1542], [-88.3257, 41.4721]
+        ]]
+      }
+    }
+    
+  ]
+}

@@ -1,0 +1,385 @@
+ Download GeoJSON
+ View raw GeoJSON
+Use in a web map ↗
+{
+  "type": "FeatureCollection",
+  "name": "CONUS_Major_Metro_Areas",
+  "crs": {
+    "type": "name",
+    "properties": {
+      "name": "urn:ogc:def:crs:OGC:1.3:CRS84"
+    }
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "id": 1,
+        "name": "New York City",
+        "state": "NY",
+        "population_approx": "20.1M",
+        "color": "#378ADD"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -74.25909,
+              40.4774
+            ],
+            [
+              -73.70018,
+              40.4774
+            ],
+            [
+              -73.70018,
+              40.91758
+            ],
+            [
+              -74.25909,
+              40.91758
+            ],
+            [
+              -74.25909,
+              40.4774
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": 2,
+        "name": "Los Angeles",
+        "state": "CA",
+        "population_approx": "13.2M",
+        "color": "#1D9E75"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -118.6682,
+              33.7033
+            ],
+            [
+              -117.6463,
+              33.7033
+            ],
+            [
+              -117.6463,
+              34.3373
+            ],
+            [
+              -118.6682,
+              34.3373
+            ],
+            [
+              -118.6682,
+              33.7033
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": 3,
+        "name": "Chicago",
+        "state": "IL",
+        "population_approx": "9.5M",
+        "color": "#D85A30"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -88.3257,
+              41.4721
+            ],
+            [
+              -87.524,
+              41.4721
+            ],
+            [
+              -87.524,
+              42.1542
+            ],
+            [
+              -88.3257,
+              42.1542
+            ],
+            [
+              -88.3257,
+              41.4721
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": 4,
+        "name": "Dallas–Fort Worth",
+        "state": "TX",
+        "population_approx": "7.8M",
+        "color": "#D4537E"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -97.6028,
+              32.4852
+            ],
+            [
+              -96.5539,
+              32.4852
+            ],
+            [
+              -96.5539,
+              33.2488
+            ],
+            [
+              -97.6028,
+              33.2488
+            ],
+            [
+              -97.6028,
+              32.4852
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": 5,
+        "name": "Houston",
+        "state": "TX",
+        "population_approx": "7.3M",
+        "color": "#7F77DD"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -95.9082,
+              29.5236
+            ],
+            [
+              -94.9082,
+              29.5236
+            ],
+            [
+              -94.9082,
+              30.1736
+            ],
+            [
+              -95.9082,
+              30.1736
+            ],
+            [
+              -95.9082,
+              29.5236
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": 6,
+        "name": "Washington DC",
+        "state": "DC/VA/MD",
+        "population_approx": "6.4M",
+        "color": "#BA7517"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -77.539,
+              38.5726
+            ],
+            [
+              -76.9095,
+              38.5726
+            ],
+            [
+              -76.9095,
+              39.0726
+            ],
+            [
+              -77.539,
+              39.0726
+            ],
+            [
+              -77.539,
+              38.5726
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": 7,
+        "name": "Miami",
+        "state": "FL",
+        "population_approx": "6.2M",
+        "color": "#639922"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -80.6782,
+              25.5682
+            ],
+            [
+              -80.1082,
+              25.5682
+            ],
+            [
+              -80.1082,
+              26.2882
+            ],
+            [
+              -80.6782,
+              26.2882
+            ],
+            [
+              -80.6782,
+              25.5682
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": 8,
+        "name": "Atlanta",
+        "state": "GA",
+        "population_approx": "6.2M",
+        "color": "#E24B4A"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -84.8551,
+              33.3751
+            ],
+            [
+              -84.0151,
+              33.3751
+            ],
+            [
+              -84.0151,
+              34.0751
+            ],
+            [
+              -84.8551,
+              34.0751
+            ],
+            [
+              -84.8551,
+              33.3751
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": 9,
+        "name": "Seattle",
+        "state": "WA",
+        "population_approx": "4.0M",
+        "color": "#0F6E56"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -122.6589,
+              47.2089
+            ],
+            [
+              -121.7589,
+              47.2089
+            ],
+            [
+              -121.7589,
+              47.8789
+            ],
+            [
+              -122.6589,
+              47.8789
+            ],
+            [
+              -122.6589,
+              47.2089
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": 10,
+        "name": "Phoenix",
+        "state": "AZ",
+        "population_approx": "5.1M",
+        "color": "#3C3489"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -112.8217,
+              33.1217
+            ],
+            [
+              -111.6217,
+              33.1217
+            ],
+            [
+              -111.6217,
+              34.0217
+            ],
+            [
+              -112.8217,
+              34.0217
+            ],
+            [
+              -112.8217,
+              33.1217
+            ]
+          ]
+        ]
+      }
+    }
+  ]
+}
