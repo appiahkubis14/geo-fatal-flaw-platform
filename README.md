@@ -1,4 +1,4 @@
-# Fatal Flaw Geospatial Risk Assessment Platform
+# Fatal Flaw Geospatial Risk Assessment Platform.
 
 **Production-grade site suitability screening for Solar, Wind, BESS, and Data Center projects across CONUS.**
 
